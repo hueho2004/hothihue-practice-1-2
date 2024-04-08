@@ -2,46 +2,34 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
-class User extends Authenticatable
+
+class User extends Model
 {
-    use HasFactory, Notifiable;
-
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
-    protected $fillable = [
-        'name',
-        'email',
-        'password',
-    ];
-
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var array<int, string>
-     */
-    protected $hidden = [
-        'password',
-        'remember_token',
-    ];
-
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
-    protected function casts(): array
-    {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-        ];
+    use HasFactory;
+    protected $table = 'users';
+    
+    public function getAllUser(){
+        $users=DB::table('users')->get();
+        return $users;
+    }
+    public function addUser($data){
+        $addUser=DB::table('users')->insert($data);
+        return $addUser;
+    }
+    public function showUser($id){
+        $getUser=DB::table('users')->where('id',$id)->get();
+        return $getUser;
+    }
+    public function updateUser($id, $data){
+        $updateUser=DB::table('users')->where('id', $id)->update($data);
+        return $updateUser;
+    }
+    public function delele($id){
+        $destroyUser= DB::table('users')->where('id', $id)->delete();
+        return $destroyUser;
     }
 }

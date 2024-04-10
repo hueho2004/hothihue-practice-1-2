@@ -6,7 +6,6 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 /**
  * @OA\Info(
  *     title="API Documentation",
@@ -79,13 +78,6 @@ class UserController extends Controller
      *         required=true,
      *         @OA\Schema(type="string")
      *     ),
-     *   @OA\Parameter(
-     *         name="number",
-     *         in="query",
-     *         description="number user",
-     *         required=true,
-     *         @OA\Schema(type="string")
-     *     ),
      *     @OA\Response(response="201", description="Successfully"),
      *     @OA\Response(response="400", description="Errors")
      * )
@@ -120,8 +112,8 @@ class UserController extends Controller
             DB::table('users')->insert($data);
             if ($request->number) {
                 $user = User::where('email', $request->email)->first();
-                $phone = $user->phone()->create([
-                    'number' => $request->number,
+                $phone = $user->posts()->create([
+                    'title' => $request->title,
                 ]);
             }
             if ($user) {

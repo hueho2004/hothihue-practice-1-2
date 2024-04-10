@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\Post;
-
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 class PostController extends Controller
 {
     /**
@@ -12,10 +12,19 @@ class PostController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
+     /**
+     * @OA\Get(
+     *     path="/api/posts",
+     *     summary="Get all post",
+     *     tags={"Get all post"},
+     *     @OA\Response(response="200", description="Success"),
+     *     security={{"bearerAuth":{}}}
+     * )
+     */
     public function index()
     {
-        $posts = Post::all();
-        return response()->json($posts);
+        $post = Post::all();
+        return response()->json($post);
     }
 
     /**
@@ -34,19 +43,41 @@ class PostController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
+            /**
+     * @OA\Post(
+     *     path="/api/posts",
+     *     summary="Create a new post",
+     *     tags = {"Create a new post"},
+     *     @OA\Parameter(
+     *         name="title",
+     *         in="query",
+     *         description="user's name",
+     *         required=true,
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Parameter(
+     *         name="description",
+     *         in="query",
+     *         description="user's email",
+     *         required=true,
+     *         @OA\Schema(type="string")
+     *     ),
+
+     *     @OA\Response(response="201", description="Successfully"),
+     *     @OA\Response(response="400", description="Errors")
+     * )
+     */
+    
     public function store(Request $request)
     {
-        $request->validate([
-            'title' => 'required|unique:post|min:5|max:100',
-            'description' => 'required|min:10|max:50',
-        ]);
-
-        $post = Post::create([
-            'title' => $request->title,
-            'content' => $request->content,
-        ]);
-
-        return response()->json($post, 201);
+        $data = $request->all();
+        $dataPost = DB::table('posts')->insert(
+            [
+                'title' => $data['title'],
+                'description' => $data['description'] 
+            ]
+            );
+            return response()->json($dataPost,201);
     }
 
     /**
@@ -55,13 +86,41 @@ class PostController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
+            /**
+     * @OA\Get(
+     *     path="/api/posts/{id}",
+     *     summary="Get a post by ID",
+     *     tags={"Post"},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         description="ID of the post to retrieve",
+     *         required=true,
+     *         @OA\Schema(
+     *             type="integer",
+     *             format="int64"
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response="200",
+     *         description="Success",
+     *       
+     *     ),
+     *     @OA\Response(
+     *         response="404",
+     *         description="post not found",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="error", type="string")
+     *         )
+     *     ),
+     *     security={{"bearerAuth": {}}}
+     * )
+     */
     public function show($id)
     {
-        $post = Post::find($id);
-        if (!$post) {
-            return response()->json(['error' => 'Post not found'], 404);
-        }
-        return response()->json($post);
+        $post = DB::table('posts')->where('id',$id)->get();
+        return $post;
     }
 
     /**
@@ -82,24 +141,47 @@ class PostController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $id)
-    {
-        $post = Post::find($id);
-        if (!$post) {
-            return response()->json(['error' => 'Post not found'], 404);
+           /**
+ * @OA\Put(
+ *     path="/api/posts/{id}",
+ *     summary="Update a specific post",
+ *     tags={"Posts"},
+ *     @OA\Parameter(
+ *         name="id",
+ *         in="path",
+ *         description="Post ID",
+ *         required=true,
+ *         @OA\Schema(type="integer")
+ *     ),
+ *     @OA\RequestBody(
+ *         required=true,
+ *         @OA\MediaType(
+ *             mediaType="application/json",
+ *             @OA\Schema(
+ *                 type="object",
+ *                 @OA\Property(property="title", type="string"),
+ *                 @OA\Property(property="description", type="string")
+ *             )
+ *         )
+ *     ),
+ *     @OA\Response(response="200", description="Success"),
+ *     security={{"bearerAuth":{}}}
+ * )
+ */
+public function update($id, Request $request) {
+    $data = $request->all();
+    unset($data['id']);
+    if (!empty($data)) {
+        $affectedRows = DB::table('posts')->where('id', $id)->update($data);
+        if ($affectedRows > 0) {
+            return response()->json(['message' => 'Posts updated successfully'], 200);
+        } else {
+            return response()->json(['error' => 'Posts not found or no changes were made'], 404);
         }
-
-        $request->validate([
-            'title' => 'required|unique:post|min:5|max:100',
-            'description' => 'required|min:10|max:50',
-        ]);
-
-        $post->title = $request->title;
-        $post->content = $request->content;
-        $post->save();
-
-        return response()->json($post);
+    } else {
+        return response()->json(['error' => 'No data provided for update'], 400);
     }
+}
 
     /**
      * Remove the specified resource from storage.
@@ -107,14 +189,25 @@ class PostController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
+          /**
+         * @OA\DELETE(
+         *     path="/api/posts/{id}",
+         *     tags={"Posts"},
+         *     summary="Delete Posts",
+         *     description="Delete Posts",
+         *     operationId="destroypost",
+         *     security={{"bearer":{}}},
+         *     @OA\Parameter(name="id", description="id, eg; 1", required=true, in="path", @OA\Schema(type="integer")),
+         *     @OA\Response(response=200, description="Posts deleted successfully"),
+         *     @OA\Response(response=404, description="Posts not found"),
+         * )
+         */
     public function destroy($id)
     {
-        $post = Post::find($id);
-        if (!$post) {
-            return response()->json(['error' => 'Post not found'], 404);
-        }
-        
+        $post = Post::findOrFail($id);
         $post->delete();
-        return response()->json(['message' => 'Post deleted successfully']);
+        return response()->json([
+            'message' => 'Posts Deleted successfully'
+        ]);
     }
 }

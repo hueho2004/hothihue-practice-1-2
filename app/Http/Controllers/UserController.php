@@ -3,11 +3,24 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use App\Models\User;
 use Illuminate\Support\Facades\Validator;
-
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+/**
+ * @OA\Info(
+ *     title="API Documentation",
+ *     version="1.0.0",
+ *     description="Documentation for the API"
+ * )
+ */
 class UserController extends Controller
 {
+    /**
+     * Display a listing of the resource.
+     *
+     * @return \Illuminate\Http\Response
+     */
     /**
      * @OA\Get(
      *     path="/api/users",
@@ -19,16 +32,27 @@ class UserController extends Controller
      */
     public function index()
     {
-        $users = DB::table('users')->get();
-        $arr = [
-            'status' => true,
-            'message' => "Thành công",
-            'data' => $users
-        ];
-        return response()->json($arr, 200);
+        $users= User::all();
+        return response()->json($users);
     }
 
     /**
+     * Show the form for creating a new resource.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function create()
+    {
+        //
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+        /**
      * @OA\Post(
      *     path="/api/users",
      *     summary="Create a new user",
@@ -36,28 +60,29 @@ class UserController extends Controller
      *     @OA\Parameter(
      *         name="name",
      *         in="query",
-     *         description="name",
+     *         description="user's name",
      *         required=true,
      *         @OA\Schema(type="string")
      *     ),
      *     @OA\Parameter(
      *         name="email",
      *         in="query",
-     *         description="email",
+     *         description="user's email",
      *         required=true,
      *         @OA\Schema(type="string")
      *     ),
-     *     @OA\Parameter(
+     *
+     *    @OA\Parameter(
      *         name="password",
      *         in="query",
-     *         description="password",
+     *         description="user's password",
      *         required=true,
      *         @OA\Schema(type="string")
      *     ),
-     *     @OA\Parameter(
-     *         name="password_confirmation",
+     *   @OA\Parameter(
+     *         name="number",
      *         in="query",
-     *         description="password_confirmation",
+     *         description="number user",
      *         required=true,
      *         @OA\Schema(type="string")
      *     ),
@@ -70,7 +95,7 @@ class UserController extends Controller
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|min:3|max:15',
             'email' => 'required|string|email|unique:users,email',
-            'password' => 'required|string|confirmed',
+            'password' => 'required|string',
         ], [
             'name.required' => 'Họ và tên bắt buộc phải nhập',
             'name.string' => 'Họ và tên bắt buộc là string',
@@ -82,7 +107,6 @@ class UserController extends Controller
             'email.string' => 'Email bắt buộc là string',
             'password.required' => 'Password bắt buộc phải nhập',
             'password.string' => 'Password bắt buộc là string',
-            'password.confirmed' => 'Password xác nhận không đúng',
         ]);
         if ($validator->fails()) {
             $errors = $validator->errors()->all();
@@ -93,7 +117,13 @@ class UserController extends Controller
                 'email' => $request->email,
                 'password' => $request->password,
             ];
-            $user = DB::table('users')->insert($data);
+            DB::table('users')->insert($data);
+            if ($request->number) {
+                $user = User::where('email', $request->email)->first();
+                $phone = $user->phone()->create([
+                    'number' => $request->number,
+                ]);
+            }
             if ($user) {
                 return response()->json('Thành công', 200);
             } else {
@@ -102,156 +132,137 @@ class UserController extends Controller
         }
     }
 
+
     /**
+     * Display the specified resource.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+        /**
      * @OA\Get(
      *     path="/api/users/{id}",
-     *     summary="Get a user",
-     *     tags = {"Get a user"},
+     *     summary="Get a user by ID",
+     *     tags={"User"},
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
-     *         description="id",
+     *         description="ID of the user to retrieve",
      *         required=true,
-     *         @OA\Schema(type="string")
+     *         @OA\Schema(
+     *             type="integer",
+     *             format="int64"
+     *         )
      *     ),
-     *     @OA\Response(response="200", description="Success"),
-     *     @OA\Response(response="400", description="Errors"),
-     *     security={{"bearerAuth":{}}}
+     *     @OA\Response(
+     *         response="200",
+     *         description="Success",
+     *       
+     *     ),
+     *     @OA\Response(
+     *         response="404",
+     *         description="User not found",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="error", type="string")
+     *         )
+     *     ),
+     *     security={{"bearerAuth": {}}}
      * )
      */
-    public function show($id)
-    {
-        $user = DB::table('users')->where('id', $id)->first();
-        if ($user) {
-            $arr = [
-                'status' => true,
-                'message' => "Thành công",
-                'data' => $user
-            ];
-        } else {
-            $arr = [
-                'status' => false,
-                'message' => "Thất bại",
-                'data' => $user
-            ];
-        }
-        return response()->json($arr, 200);
+    public function show($id){
+        $getPost=DB::table('users')->where('id',$id)->get();
+        return $getPost;
     }
 
     /**
-     * @OA\Put(
-     *     path="/api/users/{id}",
-     *     summary="Update a user",
-     *     tags = {"Update a user"},
-     *     @OA\Parameter(
-     *         name="id",
-     *         in="path",
-     *         description="user's id",
-     *         required=true,
-     *         @OA\Schema(type="string")
-     *     ),
-     *     @OA\Parameter(
-     *         name="name",
-     *         in="query",
-     *         description="name",
-     *         required=true,
-     *         @OA\Schema(type="string")
-     *     ),
-     *     @OA\Parameter(
-     *         name="email",
-     *         in="query",
-     *         description="email",
-     *         required=true,
-     *         @OA\Schema(type="string")
-     *     ),
-     *     @OA\Parameter(
-     *         name="password",
-     *         in="query",
-     *         description="password",
-     *         required=true,
-     *         @OA\Schema(type="string")
-     *     ),
-     *     @OA\Parameter(
-     *         name="password_confirmation",
-     *         in="query",
-     *         description="password_confirmation",
-     *         required=true,
-     *         @OA\Schema(type="string")
-     *     ),
-     *     @OA\Response(response="201", description="Successfully"),
-     *     @OA\Response(response="400", description="Errors")
-     * )
+     * Show the form for editing the specified resource.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
      */
-    public function update($id, Request $request)
+    public function edit($id)
     {
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string|min:3|max:15',
-            'email' => 'required|string|email|unique:users,email',
-            'password' => 'required|string|confirmed',
-        ], [
-            'name.required' => 'Họ và tên bắt buộc phải nhập',
-            'name.string' => 'Họ và tên bắt buộc là string',
-            'name.min' => 'Họ và tên phải từ :min ký tự trở lên',
-            'name.max' => 'Họ và tên phải nhỏ hơn :max ký tự',
-            'email.required' => 'Email bắt buộc phải nhập',
-            'email.email' => 'Email không đúng định dạng',
-            'email.unique' => 'Email đã tồn tại trên hệ thống',
-            'email.string' => 'Email bắt buộc là string',
-            'password.required' => 'Password bắt buộc phải nhập',
-            'password.string' => 'Password bắt buộc là string',
-            'password.confirmed' => 'Password xác nhận không đúng',
-        ]);
-        if ($validator->fails()) {
-            $errors = $validator->errors()->all();
-            return response()->json($errors, 412);
-        } else {
-            $data = [
-                'name' => $request->name,
-                'email' => $request->email,
-                'password' => $request->password,
-            ];
-            $user = DB::table('users')->where('id', $id)->update($data);
-            if ($user) {
-                $arr = [
-                    'status' => true,
-                    'message' => "Thành công",
-                    'data' => $user
-                ];
-            } else {
-                $arr = [
-                    'status' => false,
-                    'message' => "Thất bại",
-                    'data' => $user
-                ];
-            }
-            return response()->json($arr, 200);
-        }
     }
 
     /**
-     * @OA\Delete(
-     *     path="/api/users/{id}",
-     *     summary="Delete a user",
-     *     tags = {"Delete a user"},
-     *     @OA\Parameter(
-     *         name="id",
-     *         in="path",
-     *         description="user's id",
-     *         required=true,
-     *         @OA\Schema(type="string")
-     *     ),
-     *     @OA\Response(response="200", description="Success"),
-     *     @OA\Response(response="400", description="Errors"),
-     *     security={{"bearerAuth":{}}}
-     * )
+     * Update the specified resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
      */
-    public function destroy($id)
-    {
-        $user = DB::table('users')->where('id', $id)->delete();
-        if ($user) {
-            return response()->json('Thành công', 200);
+        /**
+ * @OA\Put(
+ *     path="/api/users/{id}",
+ *     summary="Update a specific user",
+ *     tags={"Posts"},
+ *     @OA\Parameter(
+ *         name="id",
+ *         in="path",
+ *         description="User ID",
+ *         required=true,
+ *         @OA\Schema(type="integer")
+ *     ),
+ *     @OA\RequestBody(
+ *         required=true,
+ *         @OA\MediaType(
+ *             mediaType="application/json",
+ *             @OA\Schema(
+ *                 type="object",
+ *                 @OA\Property(property="name", type="string"),
+ *                 @OA\Property(property="email", type="string"),
+ *                  @OA\Property(property="password", type="string"),
+ *                  @OA\Property(property="number", type="string")
+ *             )
+ *         )
+ *     ),
+ *     @OA\Response(response="200", description="Success"),
+ *     security={{"bearerAuth":{}}}
+ * )
+ */
+    
+ public function update($id, Request $request) {
+    $data = $request->all();
+    unset($data['id']);
+    if (!empty($data)) {
+        $affectedRows = DB::table('users')->where('id', $id)->update($data);
+        if ($affectedRows > 0) {
+            return response()->json(['message' => 'User updated successfully'], 200);
         } else {
-            return response()->json('Thất bại', 400);
+            return response()->json(['error' => 'User not found or no changes were made'], 404);
         }
+    } else {
+        return response()->json(['error' => 'No data provided for update'], 400);
     }
+}
+
+    /**
+     * Remove the specified resource from storage.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+      /**
+         * @OA\DELETE(
+         *     path="/api/users/{id}",
+         *     tags={"User"},
+         *     summary="Delete User",
+         *     description="Delete User",
+         *     operationId="destroy",
+         *     security={{"bearer":{}}},
+         *     @OA\Parameter(name="id", description="id, eg; 1", required=true, in="path", @OA\Schema(type="integer")),
+         *     @OA\Response(response=200, description="User deleted successfully"),
+         *     @OA\Response(response=404, description="User not found"),
+         * )
+         */
+        public function destroy($id)
+        {
+            $user = User::findOrFail($id);
+
+            $user->delete();
+
+            return response()->json(['message' => 'User deleted successfully']);
+        }
+
 }

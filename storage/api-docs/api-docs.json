@@ -1,15 +1,15 @@
 {
     "openapi": "3.0.0",
     "info": {
-        "title": "Tên API",
-        "description": "Mô tả API",
+        "title": "API Documentation",
+        "description": "Documentation for the API",
         "version": "1.0.0"
     },
     "paths": {
         "/api/users": {
             "get": {
                 "tags": [
-                    "Users"
+                    "Get all users"
                 ],
                 "summary": "Get all users",
                 "operationId": "c457726701591d1183b53aa71fc13441",
@@ -26,7 +26,7 @@
             },
             "post": {
                 "tags": [
-                    "Users"
+                    "Create a new user"
                 ],
                 "summary": "Create a new user",
                 "operationId": "592819a0265360b2014512d6dbfaf0e7",
@@ -34,64 +34,87 @@
                     {
                         "name": "name",
                         "in": "query",
-                        "description": "The name of the user",
+                        "description": "user's name",
                         "required": true,
                         "schema": {
-                            "type": "string",
-                            "maxLength": 15,
-                            "minLength": 3
+                            "type": "string"
                         }
                     },
                     {
                         "name": "email",
                         "in": "query",
-                        "description": "The email of the user",
-                        "required": true
+                        "description": "user's email",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
                     },
                     {
                         "name": "password",
                         "in": "query",
-                        "description": "The password of the user",
+                        "description": "user's password",
                         "required": true,
                         "schema": {
-                            "type": "string",
-                            "minLength": 6
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "number",
+                        "in": "query",
+                        "description": "number user",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
                         }
                     }
                 ],
                 "responses": {
-                    "200": {
-                        "description": "Success"
+                    "201": {
+                        "description": "Successfully"
+                    },
+                    "400": {
+                        "description": "Errors"
                     }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
+                }
             }
         },
         "/api/users/{id}": {
             "get": {
                 "tags": [
-                    "Users"
+                    "User"
                 ],
-                "summary": "Get a specific user",
+                "summary": "Get a user by ID",
                 "operationId": "36a33ff774d5cba33c039dec2c3e0287",
                 "parameters": [
                     {
                         "name": "id",
                         "in": "path",
-                        "description": "User ID",
+                        "description": "ID of the user to retrieve",
                         "required": true,
                         "schema": {
-                            "type": "integer"
+                            "type": "integer",
+                            "format": "int64"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "Success"
+                    },
+                    "404": {
+                        "description": "User not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "error": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [
@@ -102,7 +125,7 @@
             },
             "put": {
                 "tags": [
-                    "Users"
+                    "Posts"
                 ],
                 "summary": "Update a specific user",
                 "operationId": "b9091397c8b25f12c6adb74be6ce3a5a",
@@ -115,39 +138,32 @@
                         "schema": {
                             "type": "integer"
                         }
-                    },
-                    {
-                        "name": "name",
-                        "in": "query",
-                        "description": "The name of the user",
-                        "required": true,
-                        "schema": {
-                            "type": "string",
-                            "maxLength": 15,
-                            "minLength": 3
-                        }
-                    },
-                    {
-                        "name": "email",
-                        "in": "query",
-                        "description": "The email of the user",
-                        "required": true,
-                        "schema": {
-                            "type": "string",
-                            "format": "email"
-                        }
-                    },
-                    {
-                        "name": "password",
-                        "in": "query",
-                        "description": "The password of the user",
-                        "required": false,
-                        "schema": {
-                            "type": "string",
-                            "minLength": 6
-                        }
                     }
                 ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "email": {
+                                        "type": "string"
+                                    },
+                                    "password": {
+                                        "type": "string"
+                                    },
+                                    "number": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
                 "responses": {
                     "200": {
                         "description": "Success"
@@ -161,15 +177,16 @@
             },
             "delete": {
                 "tags": [
-                    "Users"
+                    "User"
                 ],
-                "summary": "Delete a specific user",
-                "operationId": "fa56cffde745d3f152f95cbacd936c0b",
+                "summary": "Delete User",
+                "description": "Delete User",
+                "operationId": "destroy",
                 "parameters": [
                     {
                         "name": "id",
                         "in": "path",
-                        "description": "User ID",
+                        "description": "id, eg; 1",
                         "required": true,
                         "schema": {
                             "type": "integer"
@@ -178,12 +195,15 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Success"
+                        "description": "User deleted successfully"
+                    },
+                    "404": {
+                        "description": "User not found"
                     }
                 },
                 "security": [
                     {
-                        "bearerAuth": []
+                        "bearer": []
                     }
                 ]
             }
